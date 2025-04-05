@@ -23,7 +23,17 @@ const sampleData = {
         country: "Portugal"
       },
       phone: "+351 912 345 678"
-    }
+    },
+    {
+      "name": "Café Aurora",
+      "address": {
+        "street": "78 Sunlight Avenue",
+        "city": "Porto",
+        "postal_code": "4050-456",
+        "country": "Portugal"
+      },
+      "phone": "+49 152 36315235"
+    }    
   ],
   products: [
     {
@@ -43,6 +53,48 @@ const sampleData = {
       category: "Herbs",
       unit: "bunch",
       default_price_per_unit: 3.0
+    },
+    {
+      item_name: "Thai Basil",
+      category: "Herbs",
+      unit: "bunch",
+      default_price_per_unit: 3.5
+    },
+    {
+      item_name: "Yukon Gold Potatoes",
+      category: "Vegetables",
+      unit: "kg",
+      default_price_per_unit: 4.5
+    },
+    {
+      item_name: "Zucchini",
+      category: "Vegetables",
+      unit: "kg",
+      default_price_per_unit: 5.5
+    },
+    {
+      item_name: "Red Bell Peppers",
+      category: "Vegetables",
+      unit: "kg",
+      default_price_per_unit: 16.5
+    },
+    {
+      item_name: "Avocados",
+      category: "Fruits",
+      unit: "kg",
+      default_price_per_unit: 15.5
+    },
+    {
+      item_name: "Roma Tomatoes",
+      category: "Vegetables",
+      unit: "kg",
+      default_price_per_unit: 5.5
+    },
+    {
+      item_name: "Baby Spinach",
+      category: "Leafy Greens",
+      unit: "kg",
+      default_price_per_unit: 12.0
     },
     {
       item_name: "Thai Basil",

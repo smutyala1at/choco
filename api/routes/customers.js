@@ -4,9 +4,19 @@ const router = express.Router();
 const Customer = require('../models/Customer');
 const Order = require('../models/Order');
 
-// Get all customers
+// Get all customers with optional phone filter
 router.get('/', async (req, res) => {
   try {
+    // Check if phone query parameter exists
+    if (req.query.phone) {
+      const customer = await Customer.findOne({ phone: req.query.phone });
+      if (!customer) {
+        return res.status(404).json({ message: 'No customer found with this phone number' });
+      }
+      return res.json(customer);
+    }
+    
+    // If no phone query parameter, return all customers
     const customers = await Customer.find({});
     res.json(customers);
   } catch (error) {
@@ -41,6 +51,14 @@ router.get('/:id/orders', async (req, res) => {
 // Create a new customer
 router.post('/', async (req, res) => {
   try {
+    // Check if a customer with this phone already exists
+    const existingCustomer = await Customer.findOne({ phone: req.body.phone });
+    if (existingCustomer) {
+      return res.status(400).json({ 
+        message: 'A customer with this phone number already exists' 
+      });
+    }
+    
     const customer = new Customer(req.body);
     const newCustomer = await customer.save();
     res.status(201).json(newCustomer);
@@ -52,6 +70,20 @@ router.post('/', async (req, res) => {
 // Update a customer
 router.put('/:id', async (req, res) => {
   try {
+    // If phone is being updated, check it's not already used by another customer
+    if (req.body.phone) {
+      const existingCustomer = await Customer.findOne({ 
+        phone: req.body.phone,
+        _id: { $ne: req.params.id } // exclude current customer
+      });
+      
+      if (existingCustomer) {
+        return res.status(400).json({ 
+          message: 'Another customer with this phone number already exists' 
+        });
+      }
+    }
+    
     const customer = await Customer.findByIdAndUpdate(
       req.params.id,
       req.body,
