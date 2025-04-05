@@ -77,39 +77,60 @@ router.get('/:id', async (req, res) => {
 
 // Create a new order
 router.post('/', async (req, res) => {
-  try {
-    // Check if customer exists
-    const customer = await Customer.findById(req.body.customer);
-    if (!customer) {
-      return res.status(404).json({ message: 'Customer not found' });
-    }
-    
-    // Validate each item in the order
-    for (let item of req.body.items) {
-      const product = await Product.findById(item.product_id);
-      if (!product) {
-        return res.status(404).json({ 
-          message: `Product not found: ${item.item_name}` 
-        });
+    try {
+      // Check if customer exists
+      const customer = await Customer.findById(req.body.customer);
+      if (!customer) {
+        return res.status(404).json({ message: 'Customer not found' });
       }
       
-      // For orders, we should set the item_name based on the product
-      item.item_name = product.item_name;
-    }
-    
-    const order = new Order(req.body);
-    const newOrder = await order.save();
-    
-    // Return the complete order with populated fields
-    const populatedOrder = await Order.findById(newOrder._id)
-      .populate('customer')
-      .populate('items.product_id');
+      // Create a new order object from the request body
+      const orderData = { ...req.body };
       
-    res.status(201).json(populatedOrder);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-});
+      // Calculate total price starting from 0
+      let calculatedTotalPrice = 0;
+      
+      // Process each item in the order
+      for (let i = 0; i < orderData.items.length; i++) {
+        const item = orderData.items[i];
+        
+        // Get product from database
+        const product = await Product.findById(item.product_id);
+        if (!product) {
+          return res.status(404).json({ 
+            message: `Product not found: ${item.product_id}` 
+          });
+        }
+        
+        // Set product data from database instead of trusting frontend
+        orderData.items[i].product_name = product.name;
+        orderData.items[i].unit_price = product.price;
+        
+        // Calculate item total with discount
+        const discountMultiplier = 1 - (item.discount_percent || 0) / 100;
+        const itemTotal = item.quantity * product.price * discountMultiplier;
+        
+        // Add to order total
+        calculatedTotalPrice += itemTotal;
+      }
+      
+      // Set the calculated total price
+      orderData.total_price = parseFloat(calculatedTotalPrice.toFixed(2));
+      
+      // Create and save the order
+      const order = new Order(orderData);
+      const newOrder = await order.save();
+      
+      // Return the complete order with populated fields
+      const populatedOrder = await Order.findById(newOrder._id)
+        .populate('customer')
+        .populate('items.product_id');
+        
+      res.status(201).json(populatedOrder);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  });
 
 // Update order status
 router.patch('/:id/status', async (req, res) => {

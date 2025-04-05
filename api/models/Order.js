@@ -4,8 +4,8 @@ const Schema = mongoose.Schema;
 
 const orderItemSchema = new Schema({
   product_id: { type: Schema.Types.ObjectId, ref: 'Product' },
-  item_name: { type: String, required: true },
-  amount: { type: Number, required: true },
+  product_name: { type: String, required: true },
+  quantity: { type: Number, required: true },
   unit_price: { type: Number, required: true },
   discount_percent: { type: Number, default: 0 }
 });

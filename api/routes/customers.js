@@ -10,6 +10,7 @@ router.get('/', async (req, res) => {
     // Check if phone query parameter exists
     if (req.query.phone) {
       const customer = await Customer.findOne({ phone: req.query.phone });
+      console.log(customer);
       if (!customer) {
         return res.status(404).json({ message: 'No customer found with this phone number' });
       }
