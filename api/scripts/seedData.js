@@ -22,7 +22,7 @@ const sampleData = {
         postal_code: "1100-123",
         country: "Portugal"
       },
-      phone: "+351 912 345 678"
+      phone: "351912345678"
     },
     {
       "name": "Café Aurora",
@@ -32,7 +32,7 @@ const sampleData = {
         "postal_code": "4050-456",
         "country": "Portugal"
       },
-      "phone": "+49 152 36315235"
+      "phone": "4915236315235"
     }    
   ],
   products: [
