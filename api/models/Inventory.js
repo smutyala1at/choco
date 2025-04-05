@@ -8,7 +8,7 @@ const inventorySchema = new Schema({
     required: true,
     ref: 'Product'
   },
-  amount: { type: Number, required: true },
+  quantity: { type: Number, required: true },
   expiry_date: { type: Date, required: true }
 }, { timestamps: true });
 

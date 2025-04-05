@@ -64,7 +64,7 @@ router.get('/:id/inventory', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     // Check if product with same name already exists
-    const existingProduct = await Product.findOne({ item_name: req.body.item_name });
+    const existingProduct = await Product.findOne({ product_name: req.body.product_name });
     if (existingProduct) {
       return res.status(400).json({ message: 'Product with this name already exists' });
     }

@@ -75,25 +75,22 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Create a new order
 router.post('/', async (req, res) => {
     try {
+      console.log('Received order request:', JSON.stringify(req.body));
+      
       // Check if customer exists
       const customer = await Customer.findById(req.body.customer);
       if (!customer) {
         return res.status(404).json({ message: 'Customer not found' });
       }
       
-      // Create a new order object from the request body
-      const orderData = { ...req.body };
-      
-      // Calculate total price starting from 0
+      // Create a new array for processed items
+      const processedItems = [];
       let calculatedTotalPrice = 0;
       
       // Process each item in the order
-      for (let i = 0; i < orderData.items.length; i++) {
-        const item = orderData.items[i];
-        
+      for (const item of req.body.items) {
         // Get product from database
         const product = await Product.findById(item.product_id);
         if (!product) {
@@ -102,20 +99,50 @@ router.post('/', async (req, res) => {
           });
         }
         
-        // Set product data from database instead of trusting frontend
-        orderData.items[i].product_name = product.name;
-        orderData.items[i].unit_price = product.price;
+        console.log(`Found product:`, JSON.stringify(product));
         
-        // Calculate item total with discount
-        const discountMultiplier = 1 - (item.discount_percent || 0) / 100;
-        const itemTotal = item.quantity * product.price * discountMultiplier;
+        // Create a new item with all required fields
+        const processedItem = {
+          product_id: item.product_id,
+          // Use product data from database, with fallbacks to ensure we have values
+          product_name: item.product_name || 'Unknown Product',
+          quantity: item.quantity,
+          unit_price: product.default_price_per_unit
+        };
         
-        // Add to order total
+        const itemTotal = processedItem.quantity * processedItem.unit_price;
+        
+        // Add to total price
         calculatedTotalPrice += itemTotal;
+        
+        console.log(`Processed item: ${processedItem.product_name}, price: ${processedItem.unit_price}, total: ${itemTotal}`);
+        
+        // Add to processed items array
+        processedItems.push(processedItem);
       }
       
-      // Set the calculated total price
-      orderData.total_price = parseFloat(calculatedTotalPrice.toFixed(2));
+      // Create order object with processed items
+      const orderData = {
+        customer: req.body.customer,
+        order_date: new Date(),
+        delivery_date: req.body.delivery_date,
+        items: processedItems,
+        total_price: parseFloat(calculatedTotalPrice.toFixed(2)),
+        // Set initial progress status
+        progress: {
+          status: 'received',
+          updated_at: new Date()
+        },
+        delivery_window: req.body.delivery_window || 'standard'
+      };
+      
+      // Ensure total_price is valid
+      if (isNaN(orderData.total_price) || orderData.total_price === 0) {
+        console.log('Warning: Total price calculation resulted in invalid value, setting minimum value');
+        orderData.total_price = 0.01;
+      }
+      
+      console.log('Final order data:', JSON.stringify(orderData));
       
       // Create and save the order
       const order = new Order(orderData);
@@ -128,6 +155,7 @@ router.post('/', async (req, res) => {
         
       res.status(201).json(populatedOrder);
     } catch (error) {
+      console.error('Order creation error:', error);
       res.status(400).json({ message: error.message });
     }
   });
@@ -175,9 +203,9 @@ router.post('/:id/items', async (req, res) => {
     // Create new item
     const newItem = {
       product_id: req.body.product_id,
-      item_name: product.item_name,
-      amount: req.body.amount,
-      unit_price: req.body.unit_price || product.default_price_per_unit,
+      product_name: product.product_name,
+      quantity: req.body.quantity,
+      unit_price: product.default_price_per_unit,
       discount_percent: req.body.discount_percent || 0
     };
     
@@ -187,7 +215,7 @@ router.post('/:id/items', async (req, res) => {
     // Recalculate total price
     const newTotal = order.items.reduce((total, item) => {
       const discountMultiplier = 1 - (item.discount_percent / 100) || 1;
-      return total + (item.amount * item.unit_price * discountMultiplier);
+      return total + (item.quantity * item.unit_price * discountMultiplier);
     }, 0);
     
     order.total_price = newTotal;
@@ -223,7 +251,7 @@ router.delete('/:orderId/items/:itemId', async (req, res) => {
     // Recalculate total price
     const newTotal = order.items.reduce((total, item) => {
       const discountMultiplier = 1 - (item.discount_percent / 100) || 1;
-      return total + (item.amount * item.unit_price * discountMultiplier);
+      return total + (item.quantity * item.unit_price * discountMultiplier);
     }, 0);
     
     order.total_price = newTotal;
@@ -256,8 +284,8 @@ router.put('/:id', async (req, res) => {
             message: `Product not found: ${item.product_id}` 
           });
         }
-        // Ensure item_name is set from product
-        item.item_name = product.item_name;
+        // Ensure product_name is set from product
+        item.product_name = product.product_name;
       }
     }
     

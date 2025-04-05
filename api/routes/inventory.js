@@ -78,7 +78,7 @@ router.get('/summary', async (req, res) => {
           inventoryItems: 1,
           earliestExpiry: 1,
           latestExpiry: 1,
-          productName: "$product.item_name",
+          productName: "$product.product_name",
           category: "$product.category",
           unit: "$product.unit"
         }
