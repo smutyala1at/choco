@@ -21,7 +21,7 @@ router.get('/expiring-soon', async (req, res) => {
   try {
     const now = new Date();
     const sevenDaysFromNow = new Date();
-    sevenDaysFromNow.setDate(now.getDate() + 7);
+    sevenDaysFromNow.setDate(now.getDate() + 1);
     
     const expiringItems = await Inventory.find({
       expiry_date: { $gte: now, $lte: sevenDaysFromNow }

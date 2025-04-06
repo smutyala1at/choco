@@ -15,14 +15,14 @@ connectDB();
 const sampleData = {
   customers: [
     {
-      name: "Bistro Verde",
-      address: {
-        street: "123 Olive Rd",
-        city: "Lisbon",
-        postal_code: "1100-123",
-        country: "Portugal"
+      "name": "Bistro Verde",
+      "address": {
+        "street": "123 Olive Rd",
+        "city": "Lisbon",
+        "postal_code": "1100-123",
+        "country": "Portugal"
       },
-      phone: "351912345678"
+      "phone": "351912345678"
     },
     {
       "name": "Café Aurora",
@@ -33,8 +33,28 @@ const sampleData = {
         "country": "Portugal"
       },
       "phone": "4915236315235"
-    }    
-  ],
+    },
+    {
+      "name": "Gasthaus Lindenhof",
+      "address": {
+        "street": "56 Lindenstraße",
+        "city": "Berlin",
+        "postal_code": "10115",
+        "country": "Germany"
+      },
+      "phone": "4915255777427"
+    },
+    {
+      "name": "Zum Goldenen Apfel",
+      "address": {
+        "street": "89 Apfelweg",
+        "city": "Munich",
+        "postal_code": "80331",
+        "country": "Germany"
+      },
+      "phone": "4915229232816"
+    }
+  ],  
   products: [
     { "product_name": "Roma Tomatoes", "category": "Vegetables", "unit": "kg", "default_price_per_unit": 5.8 },
     { "product_name": "Roma Canned Tomatoes", "category": "Vegetables", "unit": "can", "default_price_per_unit": 2.8 },
@@ -159,18 +179,21 @@ const importData = async () => {
         product_id: productMap["Roma Tomatoes"].id,
         product_name: "Roma Tomatoes",
         quantity: 5,
+        unit: "kg",
         unit_price: productMap["Roma Tomatoes"].unit_price
       },
       {
         product_id: productMap["Baby Spinach"].expiry_date,
         product_name: "Baby Spinach",
         quantity: 3,
+        unit: "kg",
         unit_price: productMap["Baby Spinach"].unit_price
       },
       {
         product_id: productMap["Fresh Basil"].id,
         product_name: "Fresh Basil",
         quantity: 5,
+        unit: "kg",
         unit_price: productMap["Fresh Basil"].unit_price
       }
     ];

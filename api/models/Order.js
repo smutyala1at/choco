@@ -6,6 +6,7 @@ const orderItemSchema = new Schema({
   product_id: { type: Schema.Types.ObjectId, ref: 'Product' },
   product_name: { type: String, required: true },
   quantity: { type: Number, required: true },
+  unit: { type: String, required: true },
   unit_price: { type: Number, required: true },
   discount_percent: { type: Number, default: 0 }
 });

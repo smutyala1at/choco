@@ -107,6 +107,7 @@ router.post('/', async (req, res) => {
           // Use product data from database, with fallbacks to ensure we have values
           product_name: item.product_name || 'Unknown Product',
           quantity: item.quantity,
+          unit: product.unit,
           unit_price: product.default_price_per_unit
         };
         
