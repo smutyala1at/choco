@@ -8,5 +8,14 @@ export default defineConfig({
     react(), 
     tailwindcss(),
   ],
+  build: {
+    outDir: 'dist',
+    // Copy the _redirects file to the build output
+    rollupOptions: {
+      input: {
+        main: './index.html',
+      },
+    },
+  },
 })
 
