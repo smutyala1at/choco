@@ -58,7 +58,7 @@ const DeliveryTracker = () => {
       step: 1,
       label: 'Order Created'
     },
-    'in_transit': {
+    'shipping': {
       step: 2,
       label: 'In Delivery'
     },

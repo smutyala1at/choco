@@ -68,14 +68,16 @@ const OrderTrackingDashboard = () => {
     setIsUpdating(true);
     
     try {
-      // Find the full order ID from the shortened version
-      const orderIdFull = orders.find(order => order._id.slice(-5) === orderId)?._id;
+      // Find the full order and its details before updating
+      const orderToUpdate = orders.find(order => order._id.slice(-5) === orderId);
       
-      if (!orderIdFull) {
-        console.error('Could not find full order ID');
+      if (!orderToUpdate) {
+        console.error('Could not find order to update');
         setIsUpdating(false);
         return;
       }
+      
+      const orderIdFull = orderToUpdate._id;
       
       // Make API call to update the order status using the specific endpoint
       const response = await fetch(`https://choco-barl.onrender.com/api/orders/${orderIdFull}/status`, {
@@ -90,6 +92,11 @@ const OrderTrackingDashboard = () => {
       }
       
       const updatedOrder = await response.json();
+      
+      // Ensure customer data is preserved if missing from the response
+      if (!updatedOrder.customer || !updatedOrder.customer.name) {
+        updatedOrder.customer = orderToUpdate.customer;
+      }
       
       // Update the orders state with the updated order
       setOrders(prevOrders => 
@@ -124,7 +131,7 @@ const OrderTrackingDashboard = () => {
   };
 
   const getActionButton = (order) => {
-    const { id, status, date } = order;
+    const { id, status } = order;
     
     // Define the next status based on current status
     const getNextStatus = (currentStatus) => {
@@ -176,9 +183,9 @@ const OrderTrackingDashboard = () => {
     return null;
   };
 
-  // Simplify order data for display
+  // Process orders for display, preserving customer info
   const displayOrders = orders.map(order => {
-    // Find customer name
+    // Find customer name with fallback
     const customerName = order.customer?.name || 'Unknown';
     
     return {
