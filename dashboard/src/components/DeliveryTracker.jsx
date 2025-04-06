@@ -48,27 +48,33 @@ const DeliveryTracker = () => {
     year: 'numeric', month: 'long', day: 'numeric' 
   });
 
-  // Determine order status
+  // Determine order status - updated to match backend status values
   const statusMapping = {
     'received': {
       step: 1,
       label: 'Order Created'
     },
     'processing': {
-      step: 1,
-      label: 'Order Created'
+      step: 2,
+      label: 'Processing'
     },
     'shipping': {
       step: 2,
-      label: 'In Delivery'
+      label: 'In Shipping'
     },
     'delivered': {
       step: 3,
       label: 'Delivered'
+    },
+    'cancelled': {
+      step: 0,
+      label: 'Cancelled'
     }
   };
 
-  const currentStatus = statusMapping[orderData.progress.status] || statusMapping.received;
+  // Get current status, defaulting to 'received' if not found
+  const currentStatus = statusMapping[orderData.progress?.status] || statusMapping.received;
+  console.log('Current order status:', orderData.progress?.status, 'Mapped to:', currentStatus);
 
   return (
     <div className="bg-gray-50 min-h-screen p-4 flex justify-center">
@@ -99,7 +105,7 @@ const DeliveryTracker = () => {
               <div className={`h-full bg-green-600 ${currentStatus.step >= 2 ? 'w-full' : 'w-0'}`}></div>
             </div>
             
-            {/* Step 2: In Delivery */}
+            {/* Step 2: Processing/Shipping */}
             <div className="flex flex-col items-center relative">
               <div className={`w-10 h-10 rounded-full ${currentStatus.step >= 2 ? 'bg-green-600' : 'bg-gray-200'} flex items-center justify-center mb-2`}>
                 {currentStatus.step >= 2 ? (
@@ -110,7 +116,9 @@ const DeliveryTracker = () => {
                   <div className="w-3 h-3 rounded-full bg-gray-400"></div>
                 )}
               </div>
-              <span className={`${currentStatus.step >= 2 ? 'text-green-600' : 'text-gray-500'} font-medium text-xs md:text-sm`}>In Delivery</span>
+              <span className={`${currentStatus.step >= 2 ? 'text-green-600' : 'text-gray-500'} font-medium text-xs md:text-sm`}>
+                {orderData.progress?.status === 'processing' ? 'Processing' : 'In Shipping'}
+              </span>
               <span className="text-xs text-gray-500">Est. {formattedDeliveryDate}</span>
             </div>
             
@@ -135,6 +143,13 @@ const DeliveryTracker = () => {
             </div>
           </div>
           
+          {/* Cancel Status Indicator */}
+          {orderData.progress?.status === 'cancelled' && (
+            <div className="bg-red-100 border border-red-200 rounded-md p-2 mb-4 text-center">
+              <p className="text-red-600 font-medium">This order has been cancelled.</p>
+            </div>
+          )}
+          
           {/* Estimated Delivery */}
           <div className="text-center">
             <p className="text-gray-700 font-medium mb-1">
@@ -149,8 +164,14 @@ const DeliveryTracker = () => {
           <div className="flex flex-col md:flex-row justify-between items-start mb-4">
             <div className="mb-4 md:mb-0">
               <div className="mb-2">
-                <div className="bg-green-100 inline-block px-3 py-1 rounded-md">
-                  <span className="text-green-600 font-medium">{currentStatus.label}</span>
+                <div className={`inline-block px-3 py-1 rounded-md ${
+                  orderData.progress?.status === 'cancelled' ? 'bg-red-100' : 'bg-green-100'
+                }`}>
+                  <span className={`font-medium ${
+                    orderData.progress?.status === 'cancelled' ? 'text-red-600' : 'text-green-600'
+                  }`}>
+                    {currentStatus.label}
+                  </span>
                 </div>
               </div>
               <h2 className="text-lg font-medium text-gray-800 mb-1">Order #{orderId}</h2>
@@ -162,9 +183,16 @@ const DeliveryTracker = () => {
             <div className="md:ml-6">
               <h3 className="text-md font-medium text-gray-700 mb-2">Shipping Address:</h3>
               <p className="text-sm text-gray-600">{orderData.customer.name}</p>
-              <p className="text-sm text-gray-600">{orderData.customer.address.street}</p>
-              <p className="text-sm text-gray-600">{orderData.customer.address.postal_code} {orderData.customer.address.city}</p>
-              <p className="text-sm text-gray-600">{orderData.customer.address.country}</p>
+              {orderData.customer.address && (
+                <>
+                  <p className="text-sm text-gray-600">{orderData.customer.address.street}</p>
+                  <p className="text-sm text-gray-600">{orderData.customer.address.postal_code} {orderData.customer.address.city}</p>
+                  <p className="text-sm text-gray-600">{orderData.customer.address.country}</p>
+                </>
+              )}
+              {orderData.customer.phone && (
+                <p className="text-sm text-gray-600 mt-1">Phone: {orderData.customer.phone}</p>
+              )}
             </div>
           </div>
           
@@ -172,18 +200,27 @@ const DeliveryTracker = () => {
           <div>
             <h3 className="text-md font-medium text-gray-700 mb-2">Items</h3>
             <div className="border rounded-md">
-              <div className="grid grid-cols-2 bg-gray-50 p-3 border-b">
+              <div className="grid grid-cols-3 bg-gray-50 p-3 border-b">
                 <span className="text-sm font-medium text-gray-700">Item</span>
+                <span className="text-sm font-medium text-gray-700 text-right">Price</span>
                 <span className="text-sm font-medium text-gray-700 text-right">Quantity</span>
               </div>
               
               <div className="divide-y">
                 {orderData.items.map(item => (
-                  <div key={item._id} className="grid grid-cols-2 p-3">
+                  <div key={item._id} className="grid grid-cols-3 p-3">
                     <span className="text-sm text-gray-600">{item.product_name}</span>
+                    <span className="text-sm text-gray-600 text-right">${item.unit_price}</span>
                     <span className="text-sm text-gray-600 text-right">{item.quantity} {item.unit}</span>
                   </div>
                 ))}
+              </div>
+              
+              <div className="p-3 bg-gray-50 border-t">
+                <div className="flex justify-between">
+                  <span className="text-sm font-medium text-gray-700">Total</span>
+                  <span className="text-sm font-medium text-gray-700">${orderData.total_price}</span>
+                </div>
               </div>
             </div>
           </div>
