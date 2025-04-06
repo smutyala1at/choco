@@ -31,20 +31,40 @@ const OrderTrackingDashboard = () => {
   };
 
   const formatDate = (dateString, format = 'time') => {
+    console.log('Formatting date string:', dateString);
+    
+    // First create a date object from the string
     const date = new Date(dateString);
+    console.log('Date object created:', date);
+    console.log('Date hours:', date.getHours());
+    console.log('Date minutes:', date.getMinutes());
+    
+    // Clone today's date
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
     
-    const isToday = date.setHours(0,0,0,0) === today.setHours(0,0,0,0);
-    const isYesterday = date.setHours(0,0,0,0) === yesterday.setHours(0,0,0,0);
+    // Clone the date to avoid modifying the original when checking if same day
+    const dateClone = new Date(date);
+    const todayClone = new Date(today);
+    
+    // Reset time parts to 0 for date comparison only
+    const isToday = dateClone.setHours(0,0,0,0) === todayClone.setHours(0,0,0,0);
+    const isYesterday = dateClone.setHours(0,0,0,0) === yesterday.setHours(0,0,0,0);
+    
+    console.log('Is today?', isToday);
     
     if (format === 'time') {
+      // Use the original date object (not the clone) to get the real time
       const hours = date.getHours();
       const minutes = date.getMinutes();
+      console.log('Using hours:', hours, 'and minutes:', minutes);
+      
       const ampm = hours >= 12 ? 'PM' : 'AM';
       const formattedHours = hours % 12 || 12;
       const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
+      
+      console.log('Formatted time parts:', formattedHours, formattedMinutes, ampm);
       
       if (isToday) {
         return `Today, ${formattedHours}:${formattedMinutes} ${ampm}`;
@@ -91,19 +111,47 @@ const OrderTrackingDashboard = () => {
         throw new Error(errorData.message || 'Failed to update order status');
       }
       
-      const updatedOrder = await response.json();
+      // Get the API response
+      const apiResponse = await response.json();
       
-      // Ensure customer data is preserved if missing from the response
+      // Direct debugging
+      console.log('Before update - Original order date:', orderToUpdate.order_date);
+      
+      // Create an explicit new Date object to use current time
+      const now = new Date();
+      console.log('Current date object:', now);
+      console.log('Current date ISO:', now.toISOString());
+      console.log('Current hours:', now.getHours());
+      console.log('Current minutes:', now.getMinutes());
+      
+      // Manually create an updated order object
+      const updatedOrder = {
+        ...apiResponse
+      };
+      
+      // Force update date for delivered orders - completely override it
+      if (newStatus === 'delivered') {
+        // Use the explicit date we created above
+        updatedOrder.order_date = now.toISOString();
+        console.log('Updated order date to:', updatedOrder.order_date);
+      }
+      
+      // Ensure customer data is preserved
       if (!updatedOrder.customer || !updatedOrder.customer.name) {
         updatedOrder.customer = orderToUpdate.customer;
       }
       
-      // Update the orders state with the updated order
-      setOrders(prevOrders => 
-        prevOrders.map(order => 
-          order._id === orderIdFull ? updatedOrder : order
-        )
-      );
+      // Update the orders state with our modified order object
+      setOrders(prevOrders => {
+        const newOrders = prevOrders.map(order => {
+          if (order._id === orderIdFull) {
+            console.log('Updated order in state with date:', updatedOrder.order_date);
+            return updatedOrder;
+          }
+          return order;
+        });
+        return newOrders;
+      });
       
       // Show success feedback
       alert(`Order #${orderId} marked as "${newStatus}"`);
@@ -171,8 +219,8 @@ const OrderTrackingDashboard = () => {
         <button 
           onClick={() => updateOrderStatus(id, nextStatus)}
           disabled={isUpdating}
-          className={`border rounded-md px-3 py-1 text-sm
-                      transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed
+          className={`border rounded-md px-3 py-1 text-sm cursor-pointer
+                      transition-colors disabled:opacity-50 disabled:cursor-not-allowed
                       ${getButtonStyle(nextStatus)}`}
         >
           {getButtonText(nextStatus)}
@@ -209,15 +257,15 @@ const OrderTrackingDashboard = () => {
         <header className="py-4 border-b flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="text-xl font-semibold text-green-600">Ordermato</div>
           <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
-            <div className="text-gray-500 text-sm sm:text-base">Dashboard</div>
-            <div className="text-gray-500 text-sm sm:text-base">Orders</div>
-            <div className="text-gray-500 text-sm sm:text-base">Products</div>
-            <div className="text-gray-500 text-sm sm:text-base">Customers</div>
-            <div className="text-gray-500 text-sm sm:text-base">Reports</div>
+            <div className="text-gray-500 text-sm sm:text-base cursor-pointer hover:text-green-600">Dashboard</div>
+            <div className="text-gray-500 text-sm sm:text-base cursor-pointer hover:text-green-600">Orders</div>
+            <div className="text-gray-500 text-sm sm:text-base cursor-pointer hover:text-green-600">Products</div>
+            <div className="text-gray-500 text-sm sm:text-base cursor-pointer hover:text-green-600">Customers</div>
+            <div className="text-gray-500 text-sm sm:text-base cursor-pointer hover:text-green-600">Reports</div>
           </div>
           <div className="flex items-center space-x-4">
-            <Bell className="text-gray-500" size={18} />
-            <User className="text-gray-500" size={18} />
+            <Bell className="text-gray-500 cursor-pointer hover:text-green-600" size={18} />
+            <User className="text-gray-500 cursor-pointer hover:text-green-600" size={18} />
           </div>
         </header>
 
@@ -229,24 +277,26 @@ const OrderTrackingDashboard = () => {
         {/* Search and filters */}
         <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
           <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-2.5 text-gray-400" size={16} />
-            <input 
-              type="text" 
-              placeholder="Search orders..." 
-              className="pl-10 pr-4 py-2 border rounded-md w-full focus:outline-none focus:ring-1 focus:ring-green-500"
-            />
+            <div className="relative flex items-center">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+              <input 
+                type="text" 
+                placeholder="Search orders..." 
+                className="pl-10 pr-4 py-2 border rounded-md w-full focus:outline-none focus:ring-1 focus:ring-gray-300"
+              />
+            </div>
           </div>
-          <div className="flex flex-wrap gap-3 justify-between sm:justify-end">
-            <div className="flex items-center">
-              <button className="border rounded-l-md px-2 py-1 text-gray-500">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center border rounded overflow-hidden">
+              <button className="px-3 py-2 text-gray-500 cursor-pointer hover:bg-gray-50">
                 <ChevronLeft size={16} />
               </button>
-              <button className="border-t border-b border-r rounded-r-md px-2 py-1 text-gray-500">
+              <button className="border-l px-3 py-2 text-gray-500 cursor-pointer hover:bg-gray-50">
                 <ChevronRight size={16} />
               </button>
             </div>
             <div className="relative">
-              <button className="flex items-center space-x-1 border rounded-md px-3 py-1 text-sm text-gray-700">
+              <button className="flex items-center space-x-2 bg-white border rounded-md px-4 py-2 text-sm text-gray-700 cursor-pointer hover:bg-gray-50">
                 <Filter size={14} />
                 <span>All Orders</span>
                 <ChevronDown size={14} />
@@ -256,7 +306,7 @@ const OrderTrackingDashboard = () => {
         </div>
 
         {/* Orders list */}
-        <div className="space-y-4">
+        <div className="space-y-4 mb-16">
           {displayOrders.map((order) => (
             <div key={order.id} className="border rounded-md overflow-hidden">
               <div className="px-4 py-3 sm:px-5 sm:py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -275,7 +325,7 @@ const OrderTrackingDashboard = () => {
                   {getActionButton(order)}
                   <button 
                     onClick={() => toggleOrderExpansion(order.id)}
-                    className="text-gray-500"
+                    className="text-gray-500 cursor-pointer hover:text-gray-700"
                   >
                     <ChevronDown size={18} className={expandedOrder === order.id ? "transform rotate-180" : ""} />
                   </button>
