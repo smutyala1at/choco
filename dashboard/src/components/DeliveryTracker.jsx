@@ -12,7 +12,9 @@ const DeliveryTracker = () => {
       try {
         setLoading(true);
         // Replace with your actual API endpoint
-        const response = await fetch(`https://choco-barl.onrender.com/api/orders/${orderId}`);
+        const apiUrl = `https://choco-barl.onrender.com/api/orders/${orderId}`;
+        console.log('Fetching from:', apiUrl);
+        const response = await fetch(apiUrl);
         
         if (!response.ok) {
           throw new Error('Order not found');
