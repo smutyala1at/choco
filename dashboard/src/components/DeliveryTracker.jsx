@@ -1,6 +1,73 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 
 const DeliveryTracker = () => {
+  const { orderId } = useParams();
+  const [orderData, setOrderData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchOrderData = async () => {
+      try {
+        setLoading(true);
+        // Replace with your actual API endpoint
+        const response = await fetch(`https://choco-barl.onrender.com/api/orders/${orderId}`);
+        
+        if (!response.ok) {
+          throw new Error('Order not found');
+        }
+        
+        const data = await response.json();
+        setOrderData(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (orderId) {
+      fetchOrderData();
+    }
+  }, [orderId]);
+
+  if (loading) return <div className="p-4">Loading order information...</div>;
+  if (error) return <div className="p-4 text-red-500">Error: {error}</div>;
+  if (!orderData) return <div className="p-4">No order found</div>;
+
+  // Format dates
+  const orderDate = new Date(orderData.order_date);
+  const deliveryDate = new Date(orderData.delivery_date);
+  const formattedOrderDate = orderDate.toLocaleDateString('en-US', { 
+    year: 'numeric', month: 'long', day: 'numeric' 
+  });
+  const formattedDeliveryDate = deliveryDate.toLocaleDateString('en-US', { 
+    year: 'numeric', month: 'long', day: 'numeric' 
+  });
+
+  // Determine order status
+  const statusMapping = {
+    'received': {
+      step: 1,
+      label: 'Order Created'
+    },
+    'processing': {
+      step: 1,
+      label: 'Order Created'
+    },
+    'in_transit': {
+      step: 2,
+      label: 'In Delivery'
+    },
+    'delivered': {
+      step: 3,
+      label: 'Delivered'
+    }
+  };
+
+  const currentStatus = statusMapping[orderData.progress.status] || statusMapping.received;
+
   return (
     <div className="bg-gray-50 min-h-screen p-4">
       {/* Delivery Progress Card */}
@@ -11,45 +78,65 @@ const DeliveryTracker = () => {
         <div className="flex justify-between items-center mb-6">
           {/* Step 1: Order Created */}
           <div className="flex flex-col items-center relative">
-            <div className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center mb-2">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+            <div className={`w-10 h-10 rounded-full ${currentStatus.step >= 1 ? 'bg-green-600' : 'bg-gray-200'} flex items-center justify-center mb-2`}>
+              {currentStatus.step >= 1 ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <div className="w-3 h-3 rounded-full bg-gray-400"></div>
+              )}
             </div>
-            <span className="text-green-600 font-medium">Order Created</span>
-            <span className="text-xs text-gray-500">April 6, 2025</span>
+            <span className={`${currentStatus.step >= 1 ? 'text-green-600' : 'text-gray-500'} font-medium`}>Order Created</span>
+            <span className="text-xs text-gray-500">{formattedOrderDate}</span>
           </div>
           
           {/* Connecting Line 1 */}
           <div className="h-1 bg-gray-200 flex-1 mx-2 self-start mt-5">
-            <div className="h-full bg-green-600 w-0"></div>
+            <div className={`h-full bg-green-600 ${currentStatus.step >= 2 ? 'w-full' : 'w-0'}`}></div>
           </div>
           
           {/* Step 2: In Delivery */}
           <div className="flex flex-col items-center relative">
-            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mb-2">
-              <div className="w-3 h-3 rounded-full bg-gray-400"></div>
+            <div className={`w-10 h-10 rounded-full ${currentStatus.step >= 2 ? 'bg-green-600' : 'bg-gray-200'} flex items-center justify-center mb-2`}>
+              {currentStatus.step >= 2 ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <div className="w-3 h-3 rounded-full bg-gray-400"></div>
+              )}
             </div>
-            <span className="text-gray-500 font-medium">In Delivery</span>
-            <span className="text-xs text-gray-500">Est. April 8, 2025 6 - 8 AM</span>
+            <span className={`${currentStatus.step >= 2 ? 'text-green-600' : 'text-gray-500'} font-medium`}>In Delivery</span>
+            <span className="text-xs text-gray-500">Est. {formattedDeliveryDate}</span>
           </div>
           
           {/* Connecting Line 2 */}
-          <div className="h-1 bg-gray-200 flex-1 mx-2 self-start mt-5"></div>
+          <div className="h-1 bg-gray-200 flex-1 mx-2 self-start mt-5">
+            <div className={`h-full bg-green-600 ${currentStatus.step >= 3 ? 'w-full' : 'w-0'}`}></div>
+          </div>
           
           {/* Step 3: Delivered */}
           <div className="flex flex-col items-center relative">
-            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mb-2">
-              <div className="w-3 h-3 rounded-full bg-gray-400"></div>
+            <div className={`w-10 h-10 rounded-full ${currentStatus.step >= 3 ? 'bg-green-600' : 'bg-gray-200'} flex items-center justify-center mb-2`}>
+              {currentStatus.step >= 3 ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <div className="w-3 h-3 rounded-full bg-gray-400"></div>
+              )}
             </div>
-            <span className="text-gray-500 font-medium">Delivered</span>
-            <span className="text-xs text-gray-500">Est. April 8, 2025 by 8 AM</span>
+            <span className={`${currentStatus.step >= 3 ? 'text-green-600' : 'text-gray-500'} font-medium`}>Delivered</span>
+            <span className="text-xs text-gray-500">Est. {formattedDeliveryDate}</span>
           </div>
         </div>
         
         {/* Estimated Delivery */}
         <div className="text-center">
-          <p className="text-gray-700 font-medium mb-1">Estimated Delivery: April 8, 2025 by 8:00 AM</p>
+          <p className="text-gray-700 font-medium mb-1">
+            Estimated Delivery: {formattedDeliveryDate} {orderData.delivery_window}
+          </p>
           <p className="text-xs text-green-600">Fresh produce is delivered in temperature-controlled vehicle for maximum freshness.</p>
         </div>
       </div>
@@ -60,21 +147,21 @@ const DeliveryTracker = () => {
           <div>
             <div className="mb-2">
               <div className="bg-green-100 inline-block px-3 py-1 rounded-md">
-                <span className="text-green-600 font-medium">Order Created</span>
+                <span className="text-green-600 font-medium">{currentStatus.label}</span>
               </div>
             </div>
-            <h2 className="text-lg font-medium text-gray-800 mb-1">Order #42787</h2>
-            <p className="text-sm text-gray-500 mb-1">Placed on April 6, 2025</p>
-            <p className="text-sm text-gray-500 mb-2">Tracking Number: UF5-2Y9-789</p>
+            <h2 className="text-lg font-medium text-gray-800 mb-1">Order #{orderId}</h2>
+            <p className="text-sm text-gray-500 mb-1">Placed on {formattedOrderDate}</p>
+            <p className="text-sm text-gray-500 mb-2">Order ID: {orderData._id}</p>
             <p className="text-sm text-green-600">Reach out to us if you need to make adjustments to your order.</p>
           </div>
           
           <div className="ml-6">
             <h3 className="text-md font-medium text-gray-700 mb-2">Shipping Address:</h3>
-            <p className="text-sm text-gray-600">Bistro Verde</p>
-            <p className="text-sm text-gray-600">Heuptstraße 23</p>
-            <p className="text-sm text-gray-600">10248 Berlin</p>
-            <p className="text-sm text-gray-600">Germany</p>
+            <p className="text-sm text-gray-600">{orderData.customer.name}</p>
+            <p className="text-sm text-gray-600">{orderData.customer.address.street}</p>
+            <p className="text-sm text-gray-600">{orderData.customer.address.postal_code} {orderData.customer.address.city}</p>
+            <p className="text-sm text-gray-600">{orderData.customer.address.country}</p>
           </div>
         </div>
         
@@ -88,45 +175,12 @@ const DeliveryTracker = () => {
             </div>
             
             <div className="divide-y">
-              <div className="grid grid-cols-2 p-3">
-                <span className="text-sm text-gray-600">Roma Tomatoes</span>
-                <span className="text-sm text-gray-600 text-right">5 kg</span>
-              </div>
-              
-              <div className="grid grid-cols-2 p-3">
-                <span className="text-sm text-gray-600">Baby Spinach</span>
-                <span className="text-sm text-gray-600 text-right">3 kg</span>
-              </div>
-              
-              <div className="grid grid-cols-2 p-3">
-                <span className="text-sm text-gray-600">Fresh Basil</span>
-                <span className="text-sm text-gray-600 text-right">5 bunches</span>
-              </div>
-              
-              <div className="grid grid-cols-2 p-3">
-                <span className="text-sm text-gray-600">Thai Basil</span>
-                <span className="text-sm text-gray-600 text-right">3 bunches</span>
-              </div>
-              
-              <div className="grid grid-cols-2 p-3">
-                <span className="text-sm text-gray-600">Yukon Gold Potatoes</span>
-                <span className="text-sm text-gray-600 text-right">10 kg</span>
-              </div>
-              
-              <div className="grid grid-cols-2 p-3">
-                <span className="text-sm text-gray-600">Zucchini</span>
-                <span className="text-sm text-gray-600 text-right">4 kg</span>
-              </div>
-              
-              <div className="grid grid-cols-2 p-3">
-                <span className="text-sm text-gray-600">Red Bell Peppers</span>
-                <span className="text-sm text-gray-600 text-right">2 kg</span>
-              </div>
-              
-              <div className="grid grid-cols-2 p-3">
-                <span className="text-sm text-gray-600">Avocados</span>
-                <span className="text-sm text-gray-600 text-right">3 kg</span>
-              </div>
+              {orderData.items.map(item => (
+                <div key={item._id} className="grid grid-cols-2 p-3">
+                  <span className="text-sm text-gray-600">{item.product_name}</span>
+                  <span className="text-sm text-gray-600 text-right">{item.quantity} {item.unit}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
