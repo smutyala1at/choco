@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import DeliveryTracker from './components/DeliveryTracker';
+import DeliveryTracker from './DeliveryTracker';
 
 // Simple HomePage component defined inline
 const HomePage = () => {
