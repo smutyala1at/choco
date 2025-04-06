@@ -5,6 +5,7 @@ const OrderTrackingDashboard = () => {
   const [orders, setOrders] = useState([]);
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [activeTab, setActiveTab] = useState('all');
 
   useEffect(() => {
     fetchOrders();
@@ -250,6 +251,22 @@ const OrderTrackingDashboard = () => {
   // Sort orders by date (newest first)
   displayOrders.sort((a, b) => new Date(b.date) - new Date(a.date));
 
+  // Filter orders based on active tab
+  const filteredOrders = displayOrders.filter(order => {
+    if (activeTab === 'all') return true;
+    return order.status === activeTab;
+  });
+
+  // Count orders by status for the tab badges
+  const orderCounts = {
+    all: displayOrders.length,
+    received: displayOrders.filter(order => order.status === 'received').length,
+    processing: displayOrders.filter(order => order.status === 'processing').length,
+    shipping: displayOrders.filter(order => order.status === 'shipping').length,
+    delivered: displayOrders.filter(order => order.status === 'delivered').length,
+    cancelled: displayOrders.filter(order => order.status === 'cancelled').length
+  };
+
   return (
     <div className="bg-white min-h-screen flex justify-center">
       <div className="max-w-3xl w-full px-4 sm:px-6">
@@ -272,6 +289,91 @@ const OrderTrackingDashboard = () => {
         {/* Page title */}
         <div className="py-6">
           <h1 className="text-2xl font-semibold text-gray-800">Fresh Farm Produce Supply Co. Orders</h1>
+        </div>
+
+        {/* Status tabs */}
+        <div className="border-b mb-6">
+          <nav className="flex flex-wrap -mb-px">
+            <button 
+              onClick={() => setActiveTab('all')} 
+              className={`px-4 py-3 text-sm font-medium border-b-2 flex items-center gap-2 cursor-pointer
+                ${activeTab === 'all' 
+                  ? 'border-green-600 text-green-600' 
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+            >
+              All Orders
+              <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">
+                {orderCounts.all}
+              </span>
+            </button>
+            
+            <button 
+              onClick={() => setActiveTab('received')} 
+              className={`px-4 py-3 text-sm font-medium border-b-2 flex items-center gap-2 cursor-pointer
+                ${activeTab === 'received' 
+                  ? 'border-blue-600 text-blue-600' 
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+            >
+              Created
+              <span className="bg-blue-100 text-blue-600 text-xs px-2 py-0.5 rounded-full">
+                {orderCounts.received}
+              </span>
+            </button>
+            
+            <button 
+              onClick={() => setActiveTab('processing')} 
+              className={`px-4 py-3 text-sm font-medium border-b-2 flex items-center gap-2 cursor-pointer
+                ${activeTab === 'processing' 
+                  ? 'border-orange-600 text-orange-600' 
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+            >
+              Processing
+              <span className="bg-orange-100 text-orange-600 text-xs px-2 py-0.5 rounded-full">
+                {orderCounts.processing}
+              </span>
+            </button>
+            
+            <button 
+              onClick={() => setActiveTab('shipping')} 
+              className={`px-4 py-3 text-sm font-medium border-b-2 flex items-center gap-2 cursor-pointer
+                ${activeTab === 'shipping' 
+                  ? 'border-yellow-600 text-yellow-600' 
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+            >
+              Shipping
+              <span className="bg-yellow-100 text-yellow-600 text-xs px-2 py-0.5 rounded-full">
+                {orderCounts.shipping}
+              </span>
+            </button>
+            
+            <button 
+              onClick={() => setActiveTab('delivered')} 
+              className={`px-4 py-3 text-sm font-medium border-b-2 flex items-center gap-2 cursor-pointer
+                ${activeTab === 'delivered' 
+                  ? 'border-green-600 text-green-600' 
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+            >
+              Delivered
+              <span className="bg-green-100 text-green-600 text-xs px-2 py-0.5 rounded-full">
+                {orderCounts.delivered}
+              </span>
+            </button>
+            
+            {orderCounts.cancelled > 0 && (
+              <button 
+                onClick={() => setActiveTab('cancelled')} 
+                className={`px-4 py-3 text-sm font-medium border-b-2 flex items-center gap-2 cursor-pointer
+                  ${activeTab === 'cancelled' 
+                    ? 'border-red-600 text-red-600' 
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+              >
+                Cancelled
+                <span className="bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full">
+                  {orderCounts.cancelled}
+                </span>
+              </button>
+            )}
+          </nav>
         </div>
 
         {/* Search and filters */}
@@ -298,7 +400,7 @@ const OrderTrackingDashboard = () => {
             <div className="relative">
               <button className="flex items-center space-x-2 bg-white border rounded-md px-4 py-2 text-sm text-gray-700 cursor-pointer hover:bg-gray-50">
                 <Filter size={14} />
-                <span>All Orders</span>
+                <span>Sort By</span>
                 <ChevronDown size={14} />
               </button>
             </div>
@@ -307,67 +409,73 @@ const OrderTrackingDashboard = () => {
 
         {/* Orders list */}
         <div className="space-y-4 mb-16">
-          {displayOrders.map((order) => (
-            <div key={order.id} className="border rounded-md overflow-hidden">
-              <div className="px-4 py-3 sm:px-5 sm:py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-semibold text-sm sm:text-base">Order #{order.id}</h3>
-                    {getStatusBadge(order.status)}
+          {filteredOrders.length > 0 ? (
+            filteredOrders.map((order) => (
+              <div key={order.id} className="border rounded-md overflow-hidden">
+                <div className="px-4 py-3 sm:px-5 sm:py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-semibold text-sm sm:text-base">Order #{order.id}</h3>
+                      {getStatusBadge(order.status)}
+                    </div>
+                    <p className="text-gray-600 text-sm mt-1">{order.customer}</p>
                   </div>
-                  <p className="text-gray-600 text-sm mt-1">{order.customer}</p>
-                </div>
-                <div className="flex flex-wrap items-center gap-3 sm:gap-4 w-full sm:w-auto justify-between">
-                  <div className="flex items-center text-gray-500 text-xs sm:text-sm">
-                    <Clock size={14} className="mr-1 sm:mr-2" />
-                    <span>{formatDate(order.date)}</span>
+                  <div className="flex flex-wrap items-center gap-3 sm:gap-4 w-full sm:w-auto justify-between">
+                    <div className="flex items-center text-gray-500 text-xs sm:text-sm">
+                      <Clock size={14} className="mr-1 sm:mr-2" />
+                      <span>{formatDate(order.date)}</span>
+                    </div>
+                    {getActionButton(order)}
+                    <button 
+                      onClick={() => toggleOrderExpansion(order.id)}
+                      className="text-gray-500 cursor-pointer hover:text-gray-700"
+                    >
+                      <ChevronDown size={18} className={expandedOrder === order.id ? "transform rotate-180" : ""} />
+                    </button>
                   </div>
-                  {getActionButton(order)}
-                  <button 
-                    onClick={() => toggleOrderExpansion(order.id)}
-                    className="text-gray-500 cursor-pointer hover:text-gray-700"
-                  >
-                    <ChevronDown size={18} className={expandedOrder === order.id ? "transform rotate-180" : ""} />
-                  </button>
                 </div>
-              </div>
-              
-              {/* Expanded order details */}
-              {expandedOrder === order.id && (
-                <div className="px-4 py-3 sm:px-5 sm:py-4 bg-gray-50 border-t">
-                  <p className="font-medium text-sm mb-2">Order items</p>
-                  
-                  <div className="overflow-x-auto -mx-4 sm:mx-0">
-                    <div className="inline-block min-w-full px-4 sm:px-0">
-                      {/* Header row */}
-                      <div className="grid grid-cols-4 gap-2 sm:gap-4 mb-2 text-xs sm:text-sm font-medium text-gray-500">
-                        <div>Product</div>
-                        <div className="text-right">Quantity</div>
-                        <div className="text-right">Unit</div>
-                        <div className="text-right">Unit Price</div>
-                      </div>
-                      
-                      <div className="space-y-1 sm:space-y-2">
-                        {order.items.map((item, idx) => (
-                          <div key={idx} className="grid grid-cols-4 gap-2 sm:gap-4 text-xs sm:text-sm">
-                            <span className="truncate">{item.product_name}</span>
-                            <span className="text-right">{item.quantity}</span>
-                            <span className="text-right">{item.unit}</span>
-                            <span className="text-right">${item.unit_price?.toFixed(2) || "N/A"}</span>
-                          </div>
-                        ))}
+                
+                {/* Expanded order details */}
+                {expandedOrder === order.id && (
+                  <div className="px-4 py-3 sm:px-5 sm:py-4 bg-gray-50 border-t">
+                    <p className="font-medium text-sm mb-2">Order items</p>
+                    
+                    <div className="overflow-x-auto -mx-4 sm:mx-0">
+                      <div className="inline-block min-w-full px-4 sm:px-0">
+                        {/* Header row */}
+                        <div className="grid grid-cols-4 gap-2 sm:gap-4 mb-2 text-xs sm:text-sm font-medium text-gray-500">
+                          <div>Product</div>
+                          <div className="text-right">Quantity</div>
+                          <div className="text-right">Unit</div>
+                          <div className="text-right">Unit Price</div>
+                        </div>
+                        
+                        <div className="space-y-1 sm:space-y-2">
+                          {order.items.map((item, idx) => (
+                            <div key={idx} className="grid grid-cols-4 gap-2 sm:gap-4 text-xs sm:text-sm">
+                              <span className="truncate">{item.product_name}</span>
+                              <span className="text-right">{item.quantity}</span>
+                              <span className="text-right">{item.unit}</span>
+                              <span className="text-right">${item.unit_price?.toFixed(2) || "N/A"}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
+                    
+                    <div className="flex flex-col sm:flex-row justify-between mt-4 pt-3 border-t font-medium text-sm sm:text-base">
+                      <span>Total</span>
+                      <span>${order.total.toFixed(2)}</span>
+                    </div>
                   </div>
-                  
-                  <div className="flex flex-col sm:flex-row justify-between mt-4 pt-3 border-t font-medium text-sm sm:text-base">
-                    <span>Total</span>
-                    <span>${order.total.toFixed(2)}</span>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-8 border rounded-md">
+              <p className="text-gray-500">No {activeTab !== 'all' ? activeTab : ''} orders found</p>
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>

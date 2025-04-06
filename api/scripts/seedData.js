@@ -182,20 +182,6 @@ const importData = async () => {
         unit: "kg",
         unit_price: productMap["Roma Tomatoes"].unit_price
       },
-      {
-        product_id: productMap["Baby Spinach"].expiry_date,
-        product_name: "Baby Spinach",
-        quantity: 3,
-        unit: "kg",
-        unit_price: productMap["Baby Spinach"].unit_price
-      },
-      {
-        product_id: productMap["Fresh Basil"].id,
-        product_name: "Fresh Basil",
-        quantity: 5,
-        unit: "kg",
-        unit_price: productMap["Fresh Basil"].unit_price
-      }
     ];
 
     const newOrder = new Order({
